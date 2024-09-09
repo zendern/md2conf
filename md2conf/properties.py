@@ -5,7 +5,6 @@ from typing import Optional
 class ConfluenceError(RuntimeError):
     pass
 
-
 class ConfluenceProperties:
     domain: str
     base_path: str
@@ -50,3 +49,14 @@ class ConfluenceProperties:
         self.space_key = opt_space_key
         self.space_key = opt_space_key
         self.space_key = opt_space_key
+
+
+class ConfluenceLocalProperties(ConfluenceProperties):
+    def __init__(self):
+        super().__init__(
+            domain="localhost",
+            base_path="/wiki/",
+            user_name="fake",
+            api_key="fake",
+            space_key="FAKE",
+        )

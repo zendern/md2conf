@@ -12,6 +12,7 @@ from .application import Application
 from .converter import ConfluenceDocumentOptions
 from .processor import Processor
 from .properties import ConfluenceProperties
+from .properties import ConfluenceLocalProperties
 
 
 class Arguments(argparse.Namespace):
@@ -132,13 +133,14 @@ def main() -> None:
         render_mermaid=args.render_mermaid,
         diagram_output_format=args.diagram_output_format,
     )
-    properties = ConfluenceProperties(
-        args.domain, args.path, args.username, args.apikey, args.space
-    )
     if args.local:
-        Processor(options, properties).process(args.mdpath)
+        # Hardcode these are it should not matter since we are just processing things locally
+        Processor(options, ConfluenceLocalProperties()).process(args.mdpath)
     else:
         try:
+            properties = ConfluenceProperties(
+                args.domain, args.path, args.username, args.apikey, args.space
+            )
             with ConfluenceAPI(properties) as api:
                 Application(
                     api,

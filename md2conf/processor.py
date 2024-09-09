@@ -8,8 +8,11 @@ from .converter import (
     ConfluenceDocumentOptions,
     ConfluencePageMetadata,
     extract_qualified_id,
+    ConfluenceQualifiedID
 )
 from .properties import ConfluenceProperties
+from .properties import ConfluenceLocalProperties
+import random
 
 LOGGER = logging.getLogger(__name__)
 
@@ -67,7 +70,7 @@ class Processor:
     ) -> None:
         "Processes a single Markdown file."
 
-        document = ConfluenceDocument(path, self.options, page_metadata)
+        document = ConfluenceDocument(path=path, options=self.options, properties=self.properties, page_metadata=page_metadata)
         content = document.xhtml()
         with open(path.with_suffix(".csf"), "w", encoding="utf-8") as f:
             f.write(content)
@@ -80,7 +83,11 @@ class Processor:
 
         qualified_id, document = extract_qualified_id(document)
         if qualified_id is None:
-            raise ValueError("required: page ID for local output")
+            if isinstance(self.properties, ConfluenceLocalProperties) and self.options.root_page_id:
+                LOGGER.warn(f"processor: {absolute_path} page ID could not be generated when using --local processing. The generated pages will not be the same as when using with real api keys.")
+                qualified_id = ConfluenceQualifiedID(random.randint(1000, 9000), self.properties.space_key)
+            else:
+                raise ValueError(f"required: page ID for local output {absolute_path}")
 
         return ConfluencePageMetadata(
             domain=self.properties.domain,

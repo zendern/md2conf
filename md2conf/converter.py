@@ -15,6 +15,8 @@ from urllib.parse import ParseResult, urlparse, urlunparse
 import lxml.etree as ET
 import markdown
 from lxml.builder import ElementMaker
+from .properties import ConfluenceProperties, ConfluenceLocalProperties
+import random
 
 from . import mermaid
 
@@ -661,10 +663,14 @@ class ConfluenceDocument:
         self,
         path: pathlib.Path,
         options: ConfluenceDocumentOptions,
+        properties: ConfluenceProperties,
         page_metadata: Dict[pathlib.Path, ConfluencePageMetadata],
     ) -> None:
         self.options = options
+        self.properties = properties
         path = path.absolute()
+
+        LOGGER.debug(f"processing document: {path}")
 
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
@@ -672,7 +678,11 @@ class ConfluenceDocument:
         # extract Confluence page ID
         qualified_id, text = extract_qualified_id(text)
         if qualified_id is None:
-            raise ValueError("missing Confluence page ID")
+            if isinstance(self.properties, ConfluenceLocalProperties) and self.options.root_page_id:
+                LOGGER.warn(f"converter: {path} page ID could not be generated when using --local processing. The generated pages will not be the same as when using with real api keys.")
+                qualified_id = ConfluenceQualifiedID(random.randint(1000, 9000), self.properties.space_key)
+            else:
+                raise ValueError(f"required: page ID for local output {path}")
         self.id = qualified_id
 
         # extract 'generated-by' tag text
